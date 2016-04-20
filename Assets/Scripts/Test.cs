@@ -7,7 +7,7 @@ public class Test : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-        this.gpView.init(4, 3, 40, true, 5, 5, updateItem);
+        this.gpView.init(4, 4, 46, true, 5, 5, updateItem);
     }
 
     private void updateItem(GameObject item, int index, int pageIndex, bool isReload)

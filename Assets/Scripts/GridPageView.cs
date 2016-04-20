@@ -9,7 +9,7 @@ using DG.Tweening;
 /// TODO:
 /// [找到点击释放的事件]
 /// [onDragEnd后翻页状态 滚动页面]
-/// 隐藏和显示多余的item
+/// [隐藏和显示多余的item]
 /// 添加和删除item或者页数
 /// 跳转到某一页
 /// </summary>
@@ -67,6 +67,8 @@ public class GridPageView : MonoBehaviour, IEndDragHandler
     private float left;
     //右边位置
     private float right;
+    //最后一页可显示item的数量
+    private int lastPageItemCount;
     /// <summary>
     /// 初始化
     /// </summary>
@@ -96,16 +98,19 @@ public class GridPageView : MonoBehaviour, IEndDragHandler
 
         this.m_updateItem = updateItem;
         this.cellCount = cellCount;
-
         this.isHorizontal = isHorizontal;
+        this.gapH = gapH;
+        this.gapV = gapV;
+
         this.curPageIndex = 0;
         //计算页数
         if (this.cellsMaxCountInPage % cellCount == 0)
             this.pageCount = cellCount / this.cellsMaxCountInPage;
         else
             this.pageCount = cellCount / this.cellsMaxCountInPage + 1;
-        this.gapH = gapH;
-        this.gapV = gapV;
+        //计算最后一页的格子数量
+        this.lastPageItemCount = cellCount % this.cellsMaxCountInPage;
+
         this.itemWidth = this.itemPrefab.GetComponent<RectTransform>().sizeDelta.x;
         this.itemHeight = this.itemPrefab.GetComponent<RectTransform>().sizeDelta.y;
 
@@ -133,6 +138,7 @@ public class GridPageView : MonoBehaviour, IEndDragHandler
         {
             this.createPageItem(this.itemPrefab, this.showPageCount);
         }
+        this.updatePageItemActive();
     }
 
     /// <summary>
@@ -183,11 +189,11 @@ public class GridPageView : MonoBehaviour, IEndDragHandler
                 float x = columns * (this.itemWidth + this.gapH);
                 float y = rows * -(this.itemHeight + this.gapV);
                 item.transform.localPosition = new Vector3(x, y);
-                rows++;
-                if (rows == this.rows)
+                columns++;
+                if (columns == this.columns)
                 {
-                    rows = 0;
-                    columns++;
+                    columns = 0;
+                    rows++;
                 }
             }
         }
@@ -210,7 +216,6 @@ public class GridPageView : MonoBehaviour, IEndDragHandler
 
     public void OnEndDrag(PointerEventData eventData)
     {
-        //return;
         this.sr.StopMovement();
         GameObject pageGo = this.getPageGoByPageIndex(this.curPageIndex);
         //计算当前页未拖动时的位置
@@ -259,7 +264,9 @@ public class GridPageView : MonoBehaviour, IEndDragHandler
         }
     }
 
-    //更新page
+    /// <summary>
+    /// 循环page的滚动
+    /// </summary>
     private void updatePage()
     {
         if (this.pageList == null) return;
@@ -284,6 +291,8 @@ public class GridPageView : MonoBehaviour, IEndDragHandler
                     this.pageItemList.Add(itemList);
 
                     this.curPageIndex++;
+                    if (this.curPageIndex == this.pageCount - this.showPageCount)
+                        this.setPageItemActive(itemList);
                     break;
                 }
                 else if (pagePos.x > this.right && this.curPageIndex > 0)
@@ -297,6 +306,9 @@ public class GridPageView : MonoBehaviour, IEndDragHandler
 
                     this.pageItemList.RemoveAt(i);
                     this.pageItemList.Insert(0, itemList);
+
+                    if (this.curPageIndex == this.pageCount - this.showPageCount)
+                        this.setPageItemActive(itemList, false);
                     this.curPageIndex--;
                     break;
                 }
@@ -315,6 +327,8 @@ public class GridPageView : MonoBehaviour, IEndDragHandler
                     this.pageItemList.Add(itemList);
 
                     this.curPageIndex++;
+                    if (this.curPageIndex == this.pageCount - this.showPageCount)
+                        this.setPageItemActive(itemList);
                     break;
                 }
                 else if (pagePos.y < this.bottom && this.curPageIndex > 0)
@@ -329,6 +343,9 @@ public class GridPageView : MonoBehaviour, IEndDragHandler
                     this.pageItemList.RemoveAt(i);
                     this.pageItemList.Insert(0, itemList);
 
+                    if (this.curPageIndex == this.pageCount - this.showPageCount)
+                        this.setPageItemActive(itemList, false);
+
                     this.curPageIndex--;
                     break;
                 }
@@ -342,21 +359,63 @@ public class GridPageView : MonoBehaviour, IEndDragHandler
     private void reloadItem(bool isReload = false)
     {
         if (this.pageList == null || this.pageList.Count == 0) return;
-        int index = 0;
+        int pageIndex = 0;
         for (int i = this.curPageIndex; i < this.curPageIndex + this.showPageCount; ++i)
         {
-            if (this.pageItemList[index] != null)
+            if (this.pageItemList[pageIndex] != null)
             {
-                List<GameObject> itemList = this.pageItemList[index];
+                List<GameObject> itemList = this.pageItemList[pageIndex];
                 int count = itemList.Count;
                 for (int j = 0; j < count; ++j)
                 {
-                    GameObject item = itemList[j];
-                    if (this.m_updateItem != null)
-                        this.m_updateItem.Invoke(item, j, i, isReload);
+                    int itemIndex = i * this.cellsMaxCountInPage + j;
+                    //多余的item不做回调
+                    if (itemIndex <= this.cellCount - 1)
+                    {
+                        GameObject item = itemList[j];
+                        if (this.m_updateItem != null)
+                            this.m_updateItem.Invoke(item, itemIndex, i, isReload);
+                    }
                 }
-                index++;
+                pageIndex++;
             }
+        }
+    }
+
+    /// <summary>
+    /// 设置页数内的item显示或者隐藏
+    /// </summary>
+    /// <param name="pageItemList">一页里的item列表</param>
+    /// <param name="hide">是否隐藏</param>
+    private void setPageItemActive(List<GameObject> pageItemList, bool hide = true)
+    {
+        if (this.lastPageItemCount == 0) return;
+        int count = pageItemList.Count;
+        for (int i = 0; i < count; ++i)
+        {
+            if (hide)
+            {
+                if (i > this.lastPageItemCount - 1)
+                    pageItemList[i].SetActive(false);
+            }
+            else
+            {
+                pageItemList[i].SetActive(true);
+            }
+        }
+    }
+
+    /// <summary>
+    /// 更新一页内item是否可以显示
+    /// </summary>
+    private void updatePageItemActive()
+    {
+        if (this.pageList == null) return;
+        if (this.pageList.Count == 0) return;
+        if (this.curPageIndex == this.pageCount - this.showPageCount)
+        {
+            List<GameObject> itemList = this.pageItemList[this.curPageIndex];
+            this.setPageItemActive(itemList);
         }
     }
 
@@ -378,7 +437,7 @@ public class GridPageView : MonoBehaviour, IEndDragHandler
     /// 根据页数返回页数容器
     /// </summary>
     /// <param name="index">页数</param>
-    /// <returns></returns>
+    /// <returns>页数显示容器</returns>
     private GameObject getPageGoByPageIndex(int index)
     {
         if (this.pageList == null ||
