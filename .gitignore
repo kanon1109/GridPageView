@@ -1,0 +1,7 @@
+/Library
+/ProjectSettings
+/Temp
+/*.CSharp.csproj
+/*.sln
+/*.v11.suo
+/Assets/UnityVS
