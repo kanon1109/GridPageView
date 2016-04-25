@@ -10,7 +10,7 @@ using UnityEngine.UI;
 /// [onDragEnd后翻页状态 滚动页面]
 /// [隐藏和显示多余的item]
 /// [添加和删除item或者页数]
-/// 跳转到某一页
+/// [跳转到某一页]
 /// </summary>
 public class GridPageView : MonoBehaviour, IEndDragHandler
 {
@@ -27,7 +27,8 @@ public class GridPageView : MonoBehaviour, IEndDragHandler
     //更新列表回调方法
     private UpdateGridItem m_updateItem;
     //页数
-    private int pageCount = 0;
+    private int _pageCount = 0;
+    public int pageCount {get { return _pageCount; }}
     //一页中的格子数量
     private int cellsMaxCountInPage;
     //横向间隔
@@ -45,13 +46,15 @@ public class GridPageView : MonoBehaviour, IEndDragHandler
     //存放每页的item列表
     private List<List<GameObject>> pageItemList = null;
     //总格子数
-    private int cellCount;
+    private int _cellCount;
+    public int cellCount {get { return _cellCount; }}
     //行数(决定list的高度)
     private int rows;
     //列数(决定list的宽度)
     private int columns;
     //当前页数
     private int curPageIndex;
+    public int pageIndex { get { return curPageIndex; }}
     //滚动组件
     private ScrollRect sr;
     //单页的高宽
@@ -98,7 +101,7 @@ public class GridPageView : MonoBehaviour, IEndDragHandler
         if (this.content == null) return;
 
         this.m_updateItem = updateItem;
-        this.cellCount = cellCount;
+        this._cellCount = cellCount;
         this.isHorizontal = isHorizontal;
         this.gapH = gapH;
         this.gapV = gapV;
@@ -185,17 +188,17 @@ public class GridPageView : MonoBehaviour, IEndDragHandler
     {
         this.contentRectTf.DOKill();
         this.firstPagePos = this.getFirstPagePos();
-        int prevPageCount = this.pageCount;
+        int prevPageCount = this._pageCount;
         //计算页数
         if (cellCount % this.cellsMaxCountInPage == 0)
-            this.pageCount = cellCount / this.cellsMaxCountInPage;
+            this._pageCount = cellCount / this.cellsMaxCountInPage;
         else
-            this.pageCount = cellCount / this.cellsMaxCountInPage + 1;
+            this._pageCount = cellCount / this.cellsMaxCountInPage + 1;
         //计算最后一页的格子数量
         this.lastPageItemCount = cellCount % this.cellsMaxCountInPage;
         if (lastPageItemCount == 0) lastPageItemCount = this.cellsMaxCountInPage;
         int curLastPageIndex = this.curPageIndex + this.showPageCount - 1;
-        int lastPageIndex = this.pageCount - 1;
+        int lastPageIndex = this._pageCount - 1;
         if (this.curPageIndex > 0 && curLastPageIndex > lastPageIndex)
         {
             //当前不在第一页 并且 最后索引位置溢出了
@@ -219,8 +222,8 @@ public class GridPageView : MonoBehaviour, IEndDragHandler
         //删除多余的页数
         this.removeOverPage();
         //获取最新边界
-        if (this.pageCount < this.showPageCount)
-            this.showPageCount = this.pageCount;
+        if (this._pageCount < this.showPageCount)
+            this.showPageCount = this._pageCount;
         int creatPageCount = this.showPageCount - prevPageCount;
         this.createPageItem(this.itemPrefab, creatPageCount);
         this.updateContentSize();
@@ -237,11 +240,11 @@ public class GridPageView : MonoBehaviour, IEndDragHandler
     {
         Vector2 size;
         if (this.isHorizontal)
-            size = new Vector2(this.pageSize.x * this.pageCount,
+            size = new Vector2(this.pageSize.x * this._pageCount,
                                this.pageSize.y);
         else
             size = new Vector2(this.pageSize.x,
-                               this.pageSize.y * this.pageCount);
+                               this.pageSize.y * this._pageCount);
         this.contentRectTf.sizeDelta = size;
     }
 
@@ -353,7 +356,7 @@ public class GridPageView : MonoBehaviour, IEndDragHandler
             Vector2 pagePos = scroll.transform.InverseTransformPoint(pageGoTr.position);
             if (this.isHorizontal)
             {
-                if (pagePos.x < this.left && this.curPageIndex < this.pageCount - this.showPageCount)
+                if (pagePos.x < this.left && this.curPageIndex < this._pageCount - this.showPageCount)
                 {
                     //向左循环
                     GameObject lastPageGo = this.pageList[this.pageList.Count - 1];
@@ -368,7 +371,7 @@ public class GridPageView : MonoBehaviour, IEndDragHandler
 
                     this.curPageIndex++;
 
-                    if (this.curPageIndex == this.pageCount - this.showPageCount)
+                    if (this.curPageIndex == this._pageCount - this.showPageCount)
                         this.setPageItemActive(itemList);
                     break;
                 }
@@ -385,7 +388,7 @@ public class GridPageView : MonoBehaviour, IEndDragHandler
                     this.pageItemList.RemoveAt(i);
                     this.pageItemList.Insert(0, itemList);
 
-                    if (this.curPageIndex == this.pageCount - this.showPageCount)
+                    if (this.curPageIndex == this._pageCount - this.showPageCount)
                         this.setPageItemActive(itemList, false);
                     this.curPageIndex--;
                     break;
@@ -393,7 +396,7 @@ public class GridPageView : MonoBehaviour, IEndDragHandler
             }
             else
             {
-                if (pagePos.y > this.top && this.curPageIndex < this.pageCount - this.showPageCount)
+                if (pagePos.y > this.top && this.curPageIndex < this._pageCount - this.showPageCount)
                 {
                     //向上循环
                     GameObject lastPageGo = this.pageList[this.pageList.Count - 1];
@@ -406,7 +409,7 @@ public class GridPageView : MonoBehaviour, IEndDragHandler
                     this.pageItemList.Add(itemList);
 
                     this.curPageIndex++;
-                    if (this.curPageIndex == this.pageCount - this.showPageCount)
+                    if (this.curPageIndex == this._pageCount - this.showPageCount)
                         this.setPageItemActive(itemList);
                     break;
                 }
@@ -422,7 +425,7 @@ public class GridPageView : MonoBehaviour, IEndDragHandler
 
                     this.pageItemList.RemoveAt(i);
                     this.pageItemList.Insert(0, itemList);
-                    if (this.curPageIndex == this.pageCount - this.showPageCount)
+                    if (this.curPageIndex == this._pageCount - this.showPageCount)
                         this.setPageItemActive(itemList, false);
                     this.curPageIndex--;
                     break;
@@ -434,6 +437,7 @@ public class GridPageView : MonoBehaviour, IEndDragHandler
     /// <summary>
     /// 执行item回调
     /// </summary>
+    /// <param name="isReload"></param>
     private void reloadItem(bool isReload = false)
     {
         if (this.pageList == null || this.pageList.Count == 0) return;
@@ -448,7 +452,7 @@ public class GridPageView : MonoBehaviour, IEndDragHandler
                 {
                     int itemIndex = i * this.cellsMaxCountInPage + j;
                     //多余的item不做回调
-                    if (itemIndex <= this.cellCount - 1)
+                    if (itemIndex <= this._cellCount - 1)
                     {
                         GameObject item = itemList[j];
                         if (this.m_updateItem != null)
@@ -498,7 +502,7 @@ public class GridPageView : MonoBehaviour, IEndDragHandler
             for (int j = 0; j < this.cellsMaxCountInPage; ++j)
             {
                 GameObject item = itemList[j];
-                if (this.pageCount <= this.showPageCount) //排数在一屏以内
+                if (this._pageCount <= this.showPageCount) //排数在一屏以内
                 {
                     if (i < this.showPageCount - 1) //前几排全部显示
                     {
@@ -515,7 +519,7 @@ public class GridPageView : MonoBehaviour, IEndDragHandler
                 else //排数超过一屏
                 {
                     //判断最后一排是否在显示范围内
-                    if (this.curPageIndex < this.pageCount - this.showPageCount)
+                    if (this.curPageIndex < this._pageCount - this.showPageCount)
                     {
                         item.SetActive(true);
                     }
@@ -575,8 +579,8 @@ public class GridPageView : MonoBehaviour, IEndDragHandler
     {
         if (this.pageList == null || 
             this.pageList.Count == 0) return;
-        if (this.pageCount >= this.showPageCount) return;
-        for (int i = this.showPageCount - 1; i >= this.pageCount; --i)
+        if (this._pageCount >= this.showPageCount) return;
+        for (int i = this.showPageCount - 1; i >= this._pageCount; --i)
         {
             List<GameObject> itemList = this.pageItemList[i];
             int count = itemList.Count;
@@ -609,14 +613,59 @@ public class GridPageView : MonoBehaviour, IEndDragHandler
     /// <summary>
     /// 根据页数返回页数容器
     /// </summary>
-    /// <param name="index">页数</param>
+    /// <param name="page">页数索引</param>
     /// <returns>页数显示容器</returns>
-    private GameObject getPageGoByPageIndex(int index)
+    private GameObject getPageGoByPageIndex(int page)
     {
         if (this.pageList == null ||
             this.pageList.Count == 0 ||
-            index > this.pageList.Count - 1) return null;
-        return this.pageList[index];
+            page > this.pageList.Count - 1) return null;
+        return this.pageList[page];
+    }
+
+    /// <summary>
+    /// 根据页数滚动到相应位置
+    /// </summary>
+    /// <param name="page">页数索引</param>
+    public void rollPosByPage(int page)
+    {
+        if (this.pageList == null || 
+            this.pageList.Count == 0) return;
+        this.sr.StopMovement();
+        if (page < 0) page = 0;
+        if (page > this._pageCount - 1) page = this._pageCount - 1;
+        this.curPageIndex = page;
+        //计算出第一个索引是多少， 因为第一个curLineIndex不一定是targetLineIndex 
+        if (this.curPageIndex + this.showPageCount > this._pageCount)
+            this.curPageIndex -= page + this._pageCount - this.showPageCount;
+        Vector3 contentPos = this.contentRectTf.localPosition;
+        if (!this.isHorizontal)
+        {
+            this.firstPagePos.y = -this.pageSize.y * this.curPageIndex; //算出移动的距离
+            contentPos.y = this.pageSize.y * page;
+        }
+        else
+        {
+            this.firstPagePos.x = this.pageSize.x * this.curPageIndex; //算出移动的距离
+            contentPos.x = -this.pageSize.x * page;
+        }
+        this.contentRectTf.localPosition = contentPos;
+        this.reloadItem(true);
+        this.layoutPage();
+        this.updatePageItemActive();
+        this.fixContentPos();
+    }
+
+    /// <summary>
+    /// 根据item索引跳转到页数
+    /// </summary>
+    /// <param name="itemIndex">item的索引</param>
+    public void rollPosByPageByIndex(int itemIndex)
+    {
+        if (itemIndex < 0) itemIndex = 0;
+        if (itemIndex > this._cellCount - 1) itemIndex = this._cellCount - 1;
+        int page = Mathf.CeilToInt((itemIndex + 1) / this.cellsMaxCountInPage);
+        this.rollPosByPage(page);
     }
 
 	// Update is called once per frame

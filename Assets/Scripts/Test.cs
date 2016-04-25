@@ -5,12 +5,25 @@ using UnityEngine.UI;
 public class Test : MonoBehaviour
 {
     public Button addBtn;
+    public Button rollBtn;
     public GridPageView gpView;
+    public Text pageTxt;
     // Use this for initialization
     void Start()
     {
         this.addBtn.onClick.AddListener(addBtnClickHandler);
-        this.gpView.init(4, 4, 79, true, 5, 5, updateItem);
+        this.rollBtn.onClick.AddListener(rollBtnClickHandler);
+        this.gpView.init(4, 4, 200, true, 5, 5, updateItem);
+    }
+
+    private void rollBtnClickHandler()
+    {
+        //int page = Random.Range(0, this.gpView.pageCount - 1);
+        //print("page " + page);
+        //this.gpView.rollPosByPage(page);
+        int itemIndex = Random.Range(0, this.gpView.cellCount - 1);
+        print("itemIndex " + itemIndex);
+        this.gpView.rollPosByPageByIndex(itemIndex);
     }
 
     private void addBtnClickHandler()
@@ -29,6 +42,6 @@ public class Test : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
+        this.pageTxt.text = "第" + this.gpView.pageIndex.ToString() + "页";
     }
 }
