@@ -5,13 +5,6 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 /// <summary>
 /// 格子翻页组件
-/// TODO:
-/// []内是已经完成的
-/// [找到点击释放的事件]
-/// [onDragEnd后翻页状态 滚动页面]
-/// [隐藏和显示多余的item]
-/// [添加和删除item或者页数]
-/// [跳转到某一页]
 /// </summary>
 public class GridPageView : MonoBehaviour, IEndDragHandler
 {
