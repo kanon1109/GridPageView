@@ -6,6 +6,7 @@ using UnityEngine.UI;
 /// <summary>
 /// 格子翻页组件
 /// TODO:
+/// []内是已经完成的
 /// [找到点击释放的事件]
 /// [onDragEnd后翻页状态 滚动页面]
 /// [隐藏和显示多余的item]
